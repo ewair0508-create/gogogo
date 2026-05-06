@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>新聞聚合 | News Hub</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <h1 class="logo">📰 新聞聚合</h1>
+      <div class="header-right">
+        <input id="search" type="search" placeholder="搜尋新聞…" autocomplete="off" />
+        <button id="refresh-btn" title="重新整理">&#x21bb;</button>
+      </div>
+    </div>
+
+    <nav class="category-nav">
+      <button class="cat-btn active" data-cat="全部">全部</button>
+      <button class="cat-btn" data-cat="國際">國際</button>
+      <button class="cat-btn" data-cat="科技">科技</button>
+      <button class="cat-btn" data-cat="科學">科學</button>
+      <button class="cat-btn" data-cat="體育">體育</button>
+    </nav>
+  </header>
+
+  <main>
+    <div id="status-bar" class="status-bar hidden"></div>
+    <div id="news-grid" class="news-grid"></div>
+    <div id="loader" class="loader">
+      <span class="spinner"></span> 載入中…
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <span id="last-updated"></span>
+    <span>共 <strong id="total-count">0</strong> 則新聞</span>
+  </footer>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
