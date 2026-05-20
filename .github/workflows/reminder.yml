@@ -1,0 +1,32 @@
+name: Medication Reminder
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      window_minutes:
+        description: "Window size in minutes (default 5)"
+        required: false
+        default: "5"
+
+permissions:
+  contents: read
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Send reminders
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          REMINDER_WINDOW_MINUTES: ${{ github.event.inputs.window_minutes || '5' }}
+        run: node scripts/reminder.mjs

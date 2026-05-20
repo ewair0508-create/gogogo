@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>服藥提醒</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>💊 服藥提醒</h1>
+    <div id="status" class="status">未連接</div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="meds">藥品清單</button>
+    <button class="tab-btn" data-tab="settings">設定</button>
+    <button class="tab-btn" data-tab="help">使用說明</button>
+  </nav>
+
+  <main>
+    <!-- 藥品清單 -->
+    <section id="tab-meds" class="tab active">
+      <div class="section-header">
+        <h2>我的藥品</h2>
+        <div class="button-row">
+          <button id="refresh-btn" class="ghost" title="從 GitHub 重新載入">⟳ 重新載入</button>
+          <button id="add-med-btn" class="primary">+ 新增藥品</button>
+        </div>
+      </div>
+      <div id="not-configured" class="empty-hint">
+        請先到「設定」分頁填入 GitHub PAT 與 Repo 資訊。
+      </div>
+      <div id="med-list" class="med-list"></div>
+      <p id="med-empty" class="empty-hint hidden">還沒有藥品,點上方「新增藥品」開始建立。</p>
+      <div id="dirty-bar" class="dirty-bar hidden">
+        <span>有未儲存的變更</span>
+        <div class="button-row">
+          <button id="discard-btn">捨棄</button>
+          <button id="save-btn" class="primary">儲存到 GitHub</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 設定 -->
+    <section id="tab-settings" class="tab">
+      <h2>GitHub 連接</h2>
+      <p class="hint">網頁本身不會記錄你的藥品 — 資料存在你 GitHub repo 的 <code>medications.json</code>。需要一個 PAT(個人權杖)才能讀寫。</p>
+
+      <div class="form-group">
+        <label for="gh-owner">GitHub 帳號 (owner)</label>
+        <input type="text" id="gh-owner" placeholder="例如:ewair0508-create" />
+      </div>
+      <div class="form-group">
+        <label for="gh-repo">Repo 名稱</label>
+        <input type="text" id="gh-repo" placeholder="例如:gogogo" />
+      </div>
+      <div class="form-group">
+        <label for="gh-branch">Branch (預設 main)</label>
+        <input type="text" id="gh-branch" placeholder="main" />
+      </div>
+      <div class="form-group">
+        <label for="gh-pat">Personal Access Token (PAT)</label>
+        <input type="password" id="gh-pat" placeholder="github_pat_xxx 或 ghp_xxx" />
+        <p class="hint">儲存在這台瀏覽器的 localStorage,不會上傳。</p>
+      </div>
+      <div class="button-row">
+        <button id="save-conn-btn" class="primary">儲存連接設定</button>
+        <button id="test-conn-btn">測試連接</button>
+      </div>
+
+      <h2 style="margin-top:32px;">Telegram 設定</h2>
+      <p class="hint">Bot Token 與 Chat ID 要設成 <b>GitHub Secrets</b>(不是放在這個網頁),這樣 GitHub Actions 才讀得到、又不會被公開。設定方式請看「使用說明」分頁。</p>
+
+      <h2 style="margin-top:32px;">手動觸發</h2>
+      <p class="hint">不想等 5 分鐘 cron?可以手動跑一次 workflow 確認設定 OK。</p>
+      <div class="button-row">
+        <button id="trigger-btn">觸發一次提醒 workflow</button>
+        <a id="actions-link" href="#" target="_blank" rel="noopener" class="link-btn">前往 Actions 頁查看執行狀況 →</a>
+      </div>
+    </section>
+
+    <!-- 使用說明 -->
+    <section id="tab-help" class="tab">
+      <h2>初次設定流程</h2>
+      <p class="hint">依序完成下列 4 步,之後就只要在「藥品清單」分頁管理藥品即可。</p>
+
+      <h3>1. 建立 Telegram Bot 並取得 Chat ID</h3>
+      <ol class="steps">
+        <li>Telegram 搜尋 <code>@BotFather</code>,輸入 <code>/newbot</code>,照指示建立 bot。</li>
+        <li>記下 BotFather 給的 <b>Bot Token</b>(類似 <code>123456789:ABC...</code>)。</li>
+        <li>搜尋你剛建好的 bot 並對它傳一句話(例如「hi」)。<b>這步不能省</b>。</li>
+        <li>瀏覽器開啟下面網址(把 <code>&lt;TOKEN&gt;</code> 換成 Bot Token),從 JSON 找出 <code>"chat":{"id": ...}</code> 那個數字,就是 <b>Chat ID</b>:<br/>
+          <code class="code-block">https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code>
+        </li>
+      </ol>
+
+      <h3>2. 設定 GitHub Secrets</h3>
+      <ol class="steps">
+        <li>到你的 repo → <b>Settings</b> → <b>Secrets and variables</b> → <b>Actions</b>。</li>
+        <li>按 <b>New repository secret</b>,新增兩筆:
+          <ul style="margin:8px 0 8px 20px;">
+            <li><code>TELEGRAM_BOT_TOKEN</code> = 你的 Bot Token</li>
+            <li><code>TELEGRAM_CHAT_ID</code> = 你的 Chat ID</li>
+          </ul>
+        </li>
+      </ol>
+
+      <h3>3. 建立 GitHub Personal Access Token (PAT)</h3>
+      <ol class="steps">
+        <li>到 <a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener">github.com/settings/personal-access-tokens</a>。</li>
+        <li>按 <b>Generate new token</b>(選 fine-grained)。</li>
+        <li>Repository access → <b>Only select repositories</b>,只選這個 repo。</li>
+        <li>Permissions → Repository permissions → <b>Contents</b> 設為 <b>Read and write</b>。</li>
+        <li>產生 Token 後複製(只顯示一次),貼到「設定」分頁的 PAT 欄位。</li>
+      </ol>
+
+      <h3>4. (選用) 啟用 GitHub Pages</h3>
+      <ol class="steps">
+        <li>repo → Settings → Pages → Source 選 <b>Deploy from a branch</b> → branch 選 <b>main</b> → folder <b>/(root)</b>。</li>
+        <li>等 1-2 分鐘後可以從 <code>https://&lt;你的帳號&gt;.github.io/&lt;repo&gt;/</code> 開這個網頁,不用每次都本地開檔案。</li>
+      </ol>
+
+      <h2 style="margin-top:32px;">運作原理</h2>
+      <ul class="steps">
+        <li>GitHub Actions 每 <b>5 分鐘</b>跑一次 <code>scripts/reminder.mjs</code>。</li>
+        <li>腳本讀 <code>medications.json</code>,比對台北時間的當前時間。</li>
+        <li>若某藥品的提醒時間在過去 5 分鐘內,透過 Telegram Bot 推送訊息。</li>
+        <li>你在這個網頁編輯藥品 → 按「儲存到 GitHub」→ 透過 GitHub API 更新 JSON → 下次 cron 就會用新設定。</li>
+      </ul>
+
+      <h2 style="margin-top:32px;">注意事項</h2>
+      <ul class="steps">
+        <li>cron 不保證準時,可能延遲 1-2 分鐘。建議提醒時間設為 5 分鐘倍數(08:00、08:05...),避免邊界問題。</li>
+        <li>repo 若是 <b>public</b>,<code>medications.json</code> 的藥品名稱會公開。建議把 repo 設成 <b>private</b>。</li>
+        <li>Free 帳號的 private repo 也可以跑 Actions,有月度免費額度,這種頻率(每 5 分鐘 ≈ 8,640 次/月,每次數秒)還在範圍內。</li>
+      </ul>
+    </section>
+  </main>
+
+  <!-- 新增/編輯藥品 Modal -->
+  <div id="med-modal" class="modal hidden">
+    <div class="modal-content">
+      <h2 id="modal-title">新增藥品</h2>
+      <form id="med-form">
+        <input type="hidden" id="med-id" />
+        <div class="form-group">
+          <label for="med-name">藥品名稱 *</label>
+          <input type="text" id="med-name" required placeholder="例如:降血壓藥" />
+        </div>
+        <div class="form-group">
+          <label for="med-dose">劑量</label>
+          <input type="text" id="med-dose" placeholder="例如:1 顆 / 5 ml" />
+        </div>
+        <div class="form-group">
+          <label for="med-note">備註</label>
+          <textarea id="med-note" rows="2" placeholder="例如:飯後服用"></textarea>
+        </div>
+        <div class="form-group">
+          <label>提醒時間 *</label>
+          <div id="time-list" class="time-list"></div>
+          <button type="button" id="add-time-btn" class="ghost">+ 新增時段</button>
+        </div>
+        <div class="button-row">
+          <button type="submit" class="primary">完成</button>
+          <button type="button" id="cancel-btn">取消</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
